@@ -19,11 +19,12 @@ struct attribute
 };
 
 std::vector<std::string> filterByAttributes(std::vector<std::string> tags, 
-                                            std::vector<struct attribute> attributes)
+                                            std::vector<struct attribute> attributes,
+                                            bool silent = false)
 {
   if (attributes.size() <= 0)
   {
-    std::cerr << "No attributes specified!\n";
+    if (!silent) std::cerr << "No attributes specified!\n";
     return tags;
   }
 
@@ -136,14 +137,16 @@ std::vector<std::string> filterByAttributes(std::vector<std::string> tags,
   return elements;
 }
 
-std::vector<std::string> findTags(std::string data, std::string tag)
+std::vector<std::string> findTags(std::string data, 
+                                  std::string tag,
+                                  bool silent = false)
 {
   std::vector<std::string> tags;
 
   // if no tag specified
   if (tag == "")
   {
-    std::cerr << "No tag specified!\n";
+    if (!silent) std::cerr << "No tag specified!\n";
     tags.push_back(data);
     return tags;
   }
@@ -209,6 +212,7 @@ void help(int argc, char *argv[])
   std::cerr << "\t-a [ATTRIBUTE]=[VALUE]\t--attribute=[ATTRIBUTE]=[VALUE] (VALUE=true for empty attribute)" << std::endl;   
   std::cerr << "\t--trim\t - left trim spaces and tabs" << std::endl;
   std::cerr << "\t--keep\t - keep tags, not just the content" << std::endl;
+  std::cerr << "\t--silent\t - disable all error messages being printed to stderr" << std::endl;
   std::cerr << std::endl;
 }
 
@@ -225,7 +229,10 @@ int main(int argc, char *argv[])
   std::string name = "", tag = "";
 
   std::vector<struct attribute> attributes;
-  bool wantHelp = false, trim = false, keep = false;
+  bool wantHelp = false, 
+       trim = false, 
+       keep = false,
+       silent = false;
   for (uint16_t i = 0; i < args.size(); i++)
   {
     std::string arg = args.at(i); // current argument
@@ -240,9 +247,12 @@ int main(int argc, char *argv[])
       if (arg.substr(0,DASH_N) == "--") 
       {
         size_t eqPos = arg.find("=", DASH_N);
-        if (arg == "--help" || arg == "--trim" || arg == "--keep") eqPos = 0; // to prevent errors when no '='
+        if (arg == "--help" 
+        || arg == "--trim" 
+        || arg == "--keep"
+        || arg == "--silent") eqPos = 0; // to prevent errors when no '='
         if (eqPos == std::string::npos) {
-          std::cerr << "Equal sign missing at argument " << i << std::endl;
+          if (!silent) std::cerr << "Equal sign missing at argument " << i << std::endl;
           return ARGUMENTS_EXIT;
         }
         option = arg.substr(DASH_N, eqPos-DASH_N);
@@ -281,7 +291,7 @@ int main(int argc, char *argv[])
       if (parameter != "") {
         size_t eqPos = parameter.find("=");
         if (eqPos == std::string::npos) {
-          std::cerr << "Wrong attribute parameters at argument " << i << std::endl;
+          if (!silent) std::cerr << "Wrong attribute parameters at argument " << i << std::endl;
           return ARGUMENTS_EXIT;
         }
         std::string parameterName   = parameter.substr(0, eqPos);
@@ -297,6 +307,10 @@ int main(int argc, char *argv[])
     if (option == "keep")
     {
       keep = true;
+    } else
+    if (option == "silent")
+    {
+      silent = true;
     }
   }
 
@@ -323,8 +337,10 @@ int main(int argc, char *argv[])
     InputFile *file = new InputFile(name);
     if (!file->isGood())
     {
-      std::cerr << "Cannot open file " << name;
-      std::cerr << std::endl;
+      if (!silent) {
+        std::cerr << "Cannot open file " << name;
+        std::cerr << std::endl;
+      }
       delete file;
       return FILE_EXIT;
     }
@@ -355,11 +371,11 @@ int main(int argc, char *argv[])
 
   // get tags
   std::vector<std::string> tags;
-  tags = findTags(data, tag);
+  tags = findTags(data, tag, silent);
 
   // filter by attributes
   std::vector<std::string> elements;
-  elements = filterByAttributes(tags, attributes);
+  elements = filterByAttributes(tags, attributes, silent);
 
   //print results
   for (size_t i = 0; i < elements.size(); i++)
@@ -388,7 +404,7 @@ int main(int argc, char *argv[])
 
       if (tagOpenEnd  == std::string::npos
       ||  tagCloseBeg == std::string::npos) {
-        std::cerr << "Wrong element tag syntax!" << std::endl;
+        if (!silent) std::cerr << "Wrong element tag syntax!" << std::endl;
         std::cout << elements.at(i) << std::endl;
         continue;
       }

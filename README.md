@@ -11,6 +11,8 @@ File can be piped to stdin or read by program (see '-f' option).
 	-a [ATTRIBUTE]=[VALUE]	--attribute=[ATTRIBUTE]=[VALUE] (VALUE=true for empty attribute) - HTML attribute with value
 	--trim - left trim spaces and tabs
 	--keep - keep tags, not just the content
+  --silent - disable all error messages being printed to stderr
+
 
 ## Example
     user@PC $ cat html_example.html
