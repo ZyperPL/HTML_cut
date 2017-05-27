@@ -12,6 +12,8 @@
 #define ARGUMENTS_EXIT 1
 #define FILE_EXIT 2
 
+#define GET_PARAMETER_VALUE_STR "\1*\1"
+
 struct attribute
 {
   std::string name;
@@ -49,7 +51,7 @@ std::vector<std::string> filterByAttributes(std::vector<std::string> tags,
     //get element's attributes
     std::vector<struct attribute> eAttribs;    
 
-    std::string definition = e.substr(defBeg+1, defEnd-defBeg-1);
+    std::string definition = e.substr(defBeg+1, defEnd-defBeg);
     //std::cout << "|" <<definition << "|" << std::endl;
     
     for (size_t j = 0; j < definition.size(); j++)
@@ -124,6 +126,11 @@ std::vector<std::string> filterByAttributes(std::vector<std::string> tags,
           if (eAttribs.at(k).value == attributes.at(j).value)
           {
             correct = true;
+          } else
+          if (attributes.at(j).value == GET_PARAMETER_VALUE_STR)
+          {
+            correct = false;
+            elements.push_back("<"+eAttribs.at(k).name+">"+eAttribs.at(k).value+"</"+eAttribs.at(k).name+">");
           }
         }
       }
@@ -210,6 +217,7 @@ void help(int argc, char *argv[])
   std::cerr << "\t-t [TAG]\t--tag=[TAG]" << std::endl;
 
   std::cerr << "\t-a [ATTRIBUTE]=[VALUE]\t--attribute=[ATTRIBUTE]=[VALUE] (VALUE=true for empty attribute)" << std::endl;   
+  std::cerr << "\t-a [ATTRIBUTE]\t --attribute=[ATTRIBUTE] prints value of attribute" << std::endl;
   std::cerr << "\t--trim\t - left trim spaces and tabs" << std::endl;
   std::cerr << "\t--keep\t - keep tags, not just the content" << std::endl;
   std::cerr << "\t--silent\t - disable all error messages being printed to stderr" << std::endl;
@@ -232,7 +240,8 @@ int main(int argc, char *argv[])
   bool wantHelp = false, 
        trim = false, 
        keep = false,
-       silent = false;
+       silent = false,
+       getValue = false;
   for (uint16_t i = 0; i < args.size(); i++)
   {
     std::string arg = args.at(i); // current argument
@@ -290,12 +299,19 @@ int main(int argc, char *argv[])
     {
       if (parameter != "") {
         size_t eqPos = parameter.find("=");
+
+        std::string parameterValue;
+
         if (eqPos == std::string::npos) {
-          if (!silent) std::cerr << "Wrong attribute parameters at argument " << i << std::endl;
-          return ARGUMENTS_EXIT;
+          parameterValue = GET_PARAMETER_VALUE_STR;
+          getValue = true;          
+        } else
+        {
+          // looking for parameter's value
+          parameterValue  = parameter.substr(eqPos+1);
         }
+
         std::string parameterName   = parameter.substr(0, eqPos);
-        std::string parameterValue  = parameter.substr(eqPos+1);
         struct attribute a = { parameterName, parameterValue };
         attributes.push_back(a);
       }
@@ -377,6 +393,8 @@ int main(int argc, char *argv[])
   std::vector<std::string> elements;
   elements = filterByAttributes(tags, attributes, silent);
 
+  //for (auto e : elements) printf("Element: '%s'\n", e.c_str());
+
   //print results
   for (size_t i = 0; i < elements.size(); i++)
   {
@@ -390,6 +408,7 @@ int main(int argc, char *argv[])
         tag = "html";
         beg = elements.at(i).find("<"+tag);
       }
+      if (getValue) { tag = ""; beg = 0; }
 
       size_t tagOpenEnd  = elements.at(i).find(">", beg);
       size_t tagCloseBeg = elements.at(i).find("</"+tag, tagOpenEnd);
