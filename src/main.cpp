@@ -410,7 +410,7 @@ int main(int argc, char *argv[])
       }
 
       std::string e = elements.at(i).substr(tagOpenEnd+1, tagCloseBeg-tagOpenEnd+1-2);
-      std::cout << e << std::endl << std::endl;
+      std::cout << e << std::endl;
     }
   }
 
