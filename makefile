@@ -6,14 +6,11 @@ CPP_FLAGS=-Wall -Wextra
 
 all: $(EXECUTABLE)
 
-obj/main.o: obj_folder src/main.cpp
-	$(CPP) -c -o $@ src/main.cpp $(CPP_FLAGS)
+obj/%.o: src/%.cpp
+	$(CPP) -c -o $@ $< $(CPP_FLAGS)
 
-obj/inputfile.o: obj_folder src/inputfile.cpp src/inputfile.h
-	$(CPP) -c -o $@ src/inputfile.cpp $(CPP_FLAGS)
-
-$(EXECUTABLE): obj/main.o obj/inputfile.o
-	$(CPP) -o $(EXECUTABLE) obj/main.o obj/inputfile.o -I.
+$(EXECUTABLE): obj/main.o obj/inputfile.o obj/parser.o
+	$(CPP) -o $(EXECUTABLE) obj/main.o obj/inputfile.o obj/parser.o -I.
 
 clean:
 	rm -rf obj/*.o
